@@ -6,8 +6,8 @@ const Db_password = "";
 const Db_host = "localhost";
 
 
-const sequelize = new Sequelize("employee_management", "root", "", {
-  host: "localhost",
+const sequelize = new Sequelize(Db_name, Db_user, Db_password, {
+  host: Db_host,
   dialect: "mysql",
   logging: false
 });
