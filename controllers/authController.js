@@ -1,9 +1,12 @@
 const Employee = require("../models/Employee");
 const bcrypt = require("bcryptjs");
 
+/* ================= REGISTER ================= */
+
 exports.register = async (req, res) => {
   try {
     const errors = [];
+
     const {
       name,
       mobile,
@@ -15,13 +18,20 @@ exports.register = async (req, res) => {
       designation,
       visaStatus,
       visaExpiringOn,
-      employeeId,
       password
     } = req.body;
 
-    // ---------------- VALIDATION ----------------
+    // 🔹 VALIDATION
 
-  
+    if (!name)
+      errors.push({ field: "name", message: "Name is required" });
+
+    if (!email) {
+      errors.push({ field: "email", message: "Email is required" });
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      errors.push({ field: "email", message: "Please enter a valid email address" });
+    }
+
     if (!password) {
       errors.push({ field: "password", message: "Password is required" });
     } else {
@@ -35,22 +45,14 @@ exports.register = async (req, res) => {
         errors.push({ field: "password", message: "Password must contain at least one number" });
     }
 
-    if (!name)
-      errors.push({ field: "name", message: "Name is required" });
-
-    if (!email) {
-      errors.push({ field: "email", message: "Email is required" });
-    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      errors.push({ field: "email", message: "Please enter a valid email address" });
-    }
-
     if (errors.length > 0) {
       return res.status(400).json({ success: false, errors });
     }
 
-    // ---------------- CHECK DUPLICATE ----------------
+    // 🔹 CHECK EMAIL DUPLICATE
 
     const existingEmail = await Employee.findOne({ where: { email } });
+
     if (existingEmail) {
       return res.status(400).json({
         success: false,
@@ -58,39 +60,92 @@ exports.register = async (req, res) => {
       });
     }
 
-   
-    // ---------------- HASH PASSWORD ----------------
+    // 🔹 HASH PASSWORD
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ---------------- CREATE EMPLOYEE ----------------
+    // 🔹 CREATE EMPLOYEE
 
     const newEmployee = await Employee.create({
-  name,
-  mobile,
-  email,
-  dob,
-  address,
-  zipCode,
-  type,
-  designation,
-  visaStatus,
-  visaExpiringOn,
-  password: hashedPassword,
-  idProof: req.files?.idProof?.[0]?.filename || null,
-  employeePicture: req.files?.employeePicture?.[0]?.filename || null
-});
-
+      name,
+      mobile,
+      email,
+      dob,
+      address,
+      zipCode,
+      type,
+      designation,
+      visaStatus,
+      visaExpiringOn,
+      password: hashedPassword,
+      idProof: req.files?.idProof?.[0]?.filename || null,
+      employeePicture: req.files?.employeePicture?.[0]?.filename || null
+    });
 
     return res.status(201).json({
       success: true,
       message: "Employee registered successfully",
-      data: newEmployee
+      data: {
+        id: newEmployee.id,
+        name: newEmployee.name,
+        email: newEmployee.email
+      }
     });
 
   } catch (error) {
     console.log(error);
     return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+
+/* ================= LOGIN ================= */
+
+exports.login = async (req, res) => {
+  try {
+    const { id, password } = req.body;
+
+    if (!id || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "ID and Password are required"
+      });
+    }
+
+    const employee = await Employee.findByPk(id);
+
+    if (!employee) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID or Password"
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, employee.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID or Password"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      data: {
+        id: employee.id,
+        name: employee.name,
+        email: employee.email
+      }
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
       success: false,
       message: "Server error"
     });

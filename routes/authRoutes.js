@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const { register } = require("../controllers/authController");
+
+const { register, login } = require("../controllers/authController");
 
 // Multer config
 const storage = multer.diskStorage({
@@ -21,5 +22,7 @@ router.post(
   ]),
   register
 );
+
+router.post("/login", login);
 
 module.exports = router;
