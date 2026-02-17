@@ -1,143 +1,62 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
-const { validateEmployee } = require("../middleware/validationMiddleware");
+const Employee = require("../models/Employee");
+const multer = require("multer");
+const path = require("path");
 
-// CREATE with validation
-router.post("/", validateEmployee, async (req, res) => {
-  try {
-    const user = new User(req.body);
-    const savedUser = await user.save();
-    res.status(201).json({ 
-      success: true,
-      data: savedUser,
-      message: "Employee registered successfully"
-    });
-  } catch (error) {
-    // Handle Mongoose validation errors
-    if (error.name === "ValidationError") {
-      const errors = Object.values(error.errors).map(err => ({
-        field: err.path,
-        message: err.message
-      }));
-      return res.status(400).json({ 
-        success: false,
-        errors 
-      });
-    }
-    
-    // Handle duplicate email error
-    if (error.code === 11000) {
-      return res.status(400).json({ 
-        success: false,
-        errors: [{ field: "email", message: "Email already exists" }]
-      });
-    }
-    
-    res.status(500).json({ 
-      success: false,
-      message: "Server error",
-      error: error.message 
-    });
+// ✅ Multer config
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
-// READ ALL
-router.get("/", async (req, res) => {
-  try {
-    const users = await User.find().sort({ createdAt: -1 });
-    res.json({ 
-      success: true,
-      count: users.length,
-      data: users 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
-  }
-});
+const upload = multer({ storage });
 
-// READ SINGLE
-router.get("/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: "User not found" 
-      });
-    }
-    res.json({ 
-      success: true,
-      data: user 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
-  }
-});
+// ✅ REGISTER
+router.post(
+  "/register",
+  upload.fields([
+    { name: "idProof", maxCount: 1 },
+    { name: "employeePicture", maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const newEmployee = new Employee({
+        name: req.body.name,
+        mobile: req.body.mobile,
+        email: req.body.email,
+        dob: req.body.dob,
+        address: req.body.address,
+        zipCode: req.body.zipCode,
+        type: req.body.type,
+        designation: req.body.designation,
+        visaStatus: req.body.visaStatus,
+        visaExpiringOn: req.body.visaExpiringOn,
+        employeeId: req.body.employeeId,
+        password: req.body.password,
 
-// UPDATE with validation
-router.put("/:id", validateEmployee, async (req, res) => {
-  try {
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (!updatedUser) {
-      return res.status(404).json({ 
-        success: false,
-        message: "User not found" 
-      });
-    }
-    res.json({ 
-      success: true,
-      data: updatedUser,
-      message: "Employee updated successfully"
-    });
-  } catch (error) {
-    if (error.name === "ValidationError") {
-      const errors = Object.values(error.errors).map(err => ({
-        field: err.path,
-        message: err.message
-      }));
-      return res.status(400).json({ 
-        success: false,
-        errors 
-      });
-    }
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
-  }
-});
+        idProof: req.files?.idProof
+          ? req.files.idProof[0].filename
+          : null,
 
-// DELETE
-router.delete("/:id", async (req, res) => {
-  try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
-    if (!deletedUser) {
-      return res.status(404).json({ 
-        success: false,
-        message: "User not found" 
+        employeePicture: req.files?.employeePicture
+          ? req.files.employeePicture[0].filename
+          : null
       });
+
+      await newEmployee.save();
+
+      res.json({ success: true });
+
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ success: false });
     }
-    res.json({ 
-      success: true,
-      message: "Employee deleted successfully" 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
   }
-});
+);
 
 module.exports = router;

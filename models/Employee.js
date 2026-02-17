@@ -1,58 +1,61 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db");
 
-const employeeSchema = new mongoose.Schema({
-  employeeId: {
-    type: String,
-    required: [true, "Employee ID is required"],
-    unique: true,
-    trim: true,
-    uppercase: true,
-    match: [/^[A-Z0-9]{4,10}$/, "Employee ID must be 4-10 alphanumeric characters"]
-  },
-  password: {
-    type: String,
-    required: [true, "Password is required"],
-    minlength: [6, "Password must be at least 6 characters long"]
-  },
+const Employee = sequelize.define("Employee", {
   name: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  mobile: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
   email: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true,
-    lowercase: true
+    validate: { isEmail: true }
   },
-  role: {
-    type: String,
-    enum: ["admin", "employee", "manager"],
-    default: "employee"
+  dob: {
+    type: DataTypes.DATEONLY,
+    allowNull: false
   },
-  isActive: {
-    type: Boolean,
-    default: true
+  address: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  lastLogin: {
-    type: Date
+  zipCode: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  type: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  designation: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  visaStatus: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  visaExpiringOn: {
+    type: DataTypes.DATEONLY
+  },
+
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  idProof: {
+    type: DataTypes.STRING
+  },
+  employeePicture: {
+    type: DataTypes.STRING
   }
 }, {
   timestamps: true
 });
 
-// Hash password before saving
-employeeSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
-
-
-// Method to compare passwords
-employeeSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-
-module.exports = mongoose.model("Employee", employeeSchema);
+module.exports = Employee;

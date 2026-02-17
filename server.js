@@ -1,26 +1,21 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
+const sequelize = require("./config/db");
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Routes
-const userRoutes = require("./routes/userRoutes");
-const authRoutes = require("./routes/authRoutes");
+app.use("/uploads", express.static("uploads"));
+app.use("/api/employees", require("./routes/employeeRoutes"));
 
-app.use("/api/users", userRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", require("./routes/authRoutes"));
 
-// MongoDB Atlas Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Atlas Connected Successfully"))
-  .catch((err) => console.log("Connection Error:", err));
+// Create tables
+sequelize.sync({ alter: true });
 
-// Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(5000, () => {
+  console.log("Server running on port 5000");
+});
