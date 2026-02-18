@@ -1,63 +1,85 @@
 const { Op } = require("sequelize");
 const Employee = require("../models/Employee");
 
-// ✅ GET EMPLOYEES WITH FILTERING
+// FILTERING
 exports.getEmployees = async (req, res) => {
-  try {
-    const { type, search } = req.query;
+    try {
+        const { type, search, joiningDate, expiryDate } = req.query;
 
-    let where = {};
+        let where = {};
 
-    // ✅ TYPE FILTER (case-insensitive)
-    if (type && type !== "All Employee") {
-      where.type = {
-        [Op.like]: `%${type}%`
-      };
+        //  TYPE 
+        if (type && type !== "All Employee") {
+            where.type = {
+                [Op.like]: `%${type}%`
+            };
+        }
+
+        //  SEARCH
+        if (search) {
+            where.name = {
+                [Op.like]: `%${search}%`
+            };
+        }
+
+        // JOINING
+        if (joiningDate) {
+            where.createdAt = {
+                [Op.between]: [
+                    new Date(`${joiningDate} 00:00:00`),
+                    new Date(`${joiningDate} 23:59:59`)]
+            }
+        }
+
+
+        // EXPIRY 
+        if (expiryDate) {
+            where.visaExpiringOn = {
+                [Op.between]: [
+                    new Date(`${expiryDate} 00:00:00`),
+                    new Date(`${expiryDate} 23:59:59`)]
+            }
+        }
+
+
+
+
+        const employees = await Employee.findAll({ where });
+
+        res.json({ employees });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Server error" });
     }
-
-    // ✅ SEARCH FILTER
-    if (search) {
-      where.name = {
-        [Op.like]: `%${search}%`
-      };
-    }
-
-    const employees = await Employee.findAll({ where });
-
-    res.json({ employees });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Server error" });
-  }
 };
 
 
-// ✅ DELETE
+//  DELETE
 exports.deleteEmployee = async (req, res) => {
-  try {
-    await Employee.destroy({
-      where: { id: req.params.id }
-    });
+    try {
+        await Employee.destroy({
+            where: { id: req.params.id }
+        });
 
-    res.json({ message: "Deleted successfully" });
+        res.json({ message: "Deleted successfully" });
 
-  } catch (error) {
-    res.status(500).json({ message: "Delete failed" });
-  }
+    } catch (error) {
+        res.status(500).json({ message: "Delete failed" });
+    }
 };
 
 
-// ✅ UPDATE
+//  UPDATE
 exports.updateEmployee = async (req, res) => {
-  try {
-    await Employee.update(req.body, {
-      where: { id: req.params.id }
-    });
+    try {
+        await Employee.update(req.body, {
+            where: { id: req.params.id }
+        });
 
-    res.json({ message: "Updated successfully" });
+        res.json({ message: "Updated successfully" });
 
-  } catch (error) {
-    res.status(500).json({ message: "Update failed" });
-  }
+    } catch (error) {
+        res.status(500).json({ message: "Update failed" });
+    }
 };
