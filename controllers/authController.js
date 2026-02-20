@@ -1,12 +1,11 @@
 const Employee = require("../models/Employee");
+const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs");
 
 /* ================= REGISTER ================= */
 
 exports.register = async (req, res) => {
   try {
-    const errors = [];
-
     const {
       name,
       mobile,
@@ -21,50 +20,22 @@ exports.register = async (req, res) => {
       password
     } = req.body;
 
-    // 🔹 VALIDATION
-
-    if (!name)
-      errors.push({ field: "name", message: "Name is required" });
-
-    if (!email) {
-      errors.push({ field: "email", message: "Email is required" });
-    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      errors.push({ field: "email", message: "Please enter a valid email address" });
-    }
-
-    if (!password) {
-      errors.push({ field: "password", message: "Password is required" });
-    } else {
-      if (password.length < 6)
-        errors.push({ field: "password", message: "Password must be at least 6 characters" });
-      if (!/[a-z]/.test(password))
-        errors.push({ field: "password", message: "Password must contain at least one lowercase letter" });
-      if (!/[A-Z]/.test(password))
-        errors.push({ field: "password", message: "Password must contain at least one uppercase letter" });
-      if (!/[0-9]/.test(password))
-        errors.push({ field: "password", message: "Password must contain at least one number" });
-    }
-
-    if (errors.length > 0) {
-      return res.status(400).json({ success: false, errors });
-    }
-
-    // 🔹 CHECK EMAIL DUPLICATE
-
-    const existingEmail = await Employee.findOne({ where: { email } });
-
-    if (existingEmail) {
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        errors: [{ field: "email", message: "Email already exists" }]
+        message: "Required fields missing"
       });
     }
 
-    // 🔹 HASH PASSWORD
+    const existingEmail = await Employee.findOne({ where: { email } });
+    if (existingEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists"
+      });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 🔹 CREATE EMPLOYEE
 
     const newEmployee = await Employee.create({
       name,
@@ -77,24 +48,21 @@ exports.register = async (req, res) => {
       designation,
       visaStatus,
       visaExpiringOn,
-      password: hashedPassword,
-      idProof: req.files?.idProof?.[0]?.filename || null,
-      employeePicture: req.files?.employeePicture?.[0]?.filename || null
+      password: hashedPassword
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "Employee registered successfully",
       data: {
         id: newEmployee.id,
-        name: newEmployee.name,
-        email: newEmployee.email
+        displayId: `IN${newEmployee.id}`
       }
     });
 
   } catch (error) {
     console.log(error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Server error"
     });
@@ -106,7 +74,7 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { id, password } = req.body;
+    let { id, password } = req.body;
 
     if (!id || !password) {
       return res.status(400).json({
@@ -115,32 +83,82 @@ exports.login = async (req, res) => {
       });
     }
 
-    const employee = await Employee.findByPk(id);
+    id = id.toUpperCase();
 
-    if (!employee) {
+    const numericId = id.replace(/[^0-9]/g, "");
+
+    if (!numericId) {
       return res.status(400).json({
         success: false,
-        message: "Invalid ID or Password"
+        message: "Invalid ID format"
       });
     }
 
-    const isMatch = await bcrypt.compare(password, employee.password);
+    /* ===== ADMIN LOGIN ===== */
+    if (id.startsWith("ADM")) {
 
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid ID or Password"
-      });
-    }
+      const admin = await Admin.findByPk(numericId);
 
-    res.json({
-      success: true,
-      message: "Login successful",
-      data: {
-        id: employee.id,
-        name: employee.name,
-        email: employee.email
+      if (!admin) {
+        return res.status(400).json({
+          success: false,
+          message: "Admin not found"
+        });
       }
+
+      if (admin.password !== password) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Admin Password"
+        });
+      }
+
+      return res.json({
+        success: true,
+        role: "admin",
+        data: {
+          id: admin.id,
+          displayId: `ADM${admin.id}`
+        }
+      });
+    }
+
+    /* ===== EMPLOYEE LOGIN ===== */
+    if (id.startsWith("IN")) {
+
+      const employee = await Employee.findByPk(numericId);
+
+      if (!employee) {
+        return res.status(400).json({
+          success: false,
+          message: "Employee not found"
+        });
+      }
+
+      const isMatch = await bcrypt.compare(password, employee.password);
+
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Employee Password"
+        });
+      }
+
+      return res.json({
+        success: true,
+        role: "employee",
+        data: {
+          id: employee.id,
+          displayId: `IN${employee.id}`,
+          name: employee.name,
+          email: employee.email
+        }
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: "ID must start with ADM or IN"
     });
 
   } catch (error) {

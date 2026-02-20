@@ -13,8 +13,10 @@ app.use("/api/employees", require("./routes/employeeRoutes"));
 
 app.use("/api/auth", require("./routes/authRoutes"));
 
-// Create tables
+// TABLE
 sequelize.sync({ alter: true });
+require("./models/Admin");
+require("./models/Employee");
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
