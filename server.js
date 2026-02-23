@@ -9,12 +9,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static("uploads"));
-app.use("/api/employees", require("./routes/employeeRoutes"));
 
+app.use("/api/employees", require("./routes/employeeRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
-// TABLE
-sequelize.sync({ alter: true });
+// ✅ FIXED HERE (Removed alter:true)
+sequelize.sync()
+  .then(() => console.log("Database Synced"))
+  .catch(err => console.log(err));
+
 require("./models/Admin");
 require("./models/Employee");
 

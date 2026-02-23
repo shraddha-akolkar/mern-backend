@@ -1,48 +1,81 @@
-const jwt = require("jsonwebtoken");
 const Employee = require("../models/Employee");
+const Admin = require("../models/Admin");
+const bcrypt = require("bcryptjs");
 
-const protect = async (req, res, next) => {
+/* ================= REGISTER ================= */
+
+exports.register = async (req, res) => {
   try {
-    let token;
+    const {
+      name,
+      mobile,
+      email,
+      dob,
+      address,
+      zipCode,
+      type,
+      designation,
+      visaStatus,
+      visaExpiringOn,
+      password
+    } = req.body;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-
-    if (!token) {
-      return res.status(401).json({
+    if (!name || !email || !password) {
+      return res.status(400).json({
         success: false,
-        message: "Not authorized to access this route"
+        message: "Required fields missing"
       });
     }
 
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // Get employee from token
-      req.employee = await Employee.findById(decoded.id).select("-password");
-      
-      if (!req.employee || !req.employee.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: "Employee not found or inactive"
-        });
+    const existingEmail = await Employee.findOne({ where: { email } });
+    if (existingEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists"
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Get file names
+    const idProof = req.files?.idProof
+      ? req.files.idProof[0].filename
+      : null;
+
+    const employeePicture = req.files?.employeePicture
+      ? req.files.employeePicture[0].filename
+      : null;
+
+    const newEmployee = await Employee.create({
+      name,
+      mobile,
+      email,
+      dob,
+      address,
+      zipCode,
+      type,
+      designation,
+      visaStatus,
+      visaExpiringOn,
+      password: hashedPassword,
+      idProof,
+      employeePicture
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Employee registered successfully",
+      data: {
+        id: newEmployee.id,
+        displayId: `IN${newEmployee.id}`
       }
+    });
 
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route"
-      });
-    }
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       success: false,
       message: "Server error"
     });
   }
 };
-
-module.exports = { protect };
