@@ -37,6 +37,17 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ✅ GET FILE NAMES FROM MULTER
+    const idProofFile = req.files?.idProof
+      ? req.files.idProof[0].filename
+      : null;
+
+    const employeePictureFile = req.files?.employeePicture
+      ? req.files.employeePicture[0].filename
+      : null;
+
+    console.log("FILES:", req.files); // 👈 debug
+
     const newEmployee = await Employee.create({
       name,
       mobile,
@@ -48,7 +59,9 @@ exports.register = async (req, res) => {
       designation,
       visaStatus,
       visaExpiringOn,
-      password: hashedPassword
+      password: hashedPassword,
+      idProof: idProofFile,               
+      employeePicture: employeePictureFile 
     });
 
     res.status(201).json({
