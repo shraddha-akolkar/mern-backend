@@ -13,13 +13,16 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/employees", require("./routes/employeeRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
-// ✅ FIXED HERE (Removed alter:true)
-sequelize.sync()
-  .then(() => console.log("Database Synced"))
-  .catch(err => console.log(err));
 
 require("./models/Admin");
 require("./models/Employee");
+require("./models/Attendance")
+
+
+sequelize.sync({ alter: true })
+  .then(() => console.log("Database Synced"))
+  .catch(err => console.log(err));
+
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

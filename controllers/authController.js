@@ -2,7 +2,7 @@ const Employee = require("../models/Employee");
 const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs");
 
-/* ================= REGISTER ================= */
+/*  REGISTER  */
 
 exports.register = async (req, res) => {
   try {
@@ -37,7 +37,7 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ GET FILE NAMES FROM MULTER
+    // GET FILE NAMES
     const idProofFile = req.files?.idProof
       ? req.files.idProof[0].filename
       : null;
@@ -83,7 +83,7 @@ exports.register = async (req, res) => {
 };
 
 
-/* ================= LOGIN ================= */
+/*  LOGIN  */
 
 exports.login = async (req, res) => {
   try {
@@ -107,7 +107,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    /* ===== ADMIN LOGIN ===== */
+    /*  ADMIN LOGIN  */
     if (id.startsWith("ADM")) {
 
       const admin = await Admin.findByPk(numericId);
@@ -136,7 +136,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    /* ===== EMPLOYEE LOGIN ===== */
+    /*  EMPLOYEE LOGIN  */
     if (id.startsWith("IN")) {
 
       const employee = await Employee.findByPk(numericId);
