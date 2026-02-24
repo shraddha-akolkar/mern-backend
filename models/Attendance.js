@@ -15,11 +15,11 @@ const Attendance = sequelize.define('Attendance', {
         allowNull: false
     },
     duration: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     overtime: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false
     }
 }, {

@@ -19,7 +19,7 @@ require("./models/Employee");
 require("./models/Attendance")
 
 
-sequelize.sync({ alter: true })
+sequelize.sync()
   .then(() => console.log("Database Synced"))
   .catch(err => console.log(err));
 
