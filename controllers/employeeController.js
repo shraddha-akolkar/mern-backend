@@ -73,13 +73,32 @@ exports.deleteEmployee = async (req, res) => {
 //  UPDATE
 exports.updateEmployee = async (req, res) => {
     try {
-        await Employee.update(req.body, {
+
+        const updateData = { ...req.body };
+
+        if (req.files?.idProof) {
+            updateData.idProof = req.files.idProof[0].filename;
+        }
+
+        if (req.files?.employeePicture) {
+            updateData.employeePicture = req.files.employeePicture[0].filename;
+        }
+
+        await Employee.update(updateData, {
             where: { id: req.params.id }
         });
 
-        res.json({ message: "Updated successfully" });
+        res.json({
+            success: true,
+            message: "Updated successfully"
+        });
 
     } catch (error) {
-        res.status(500).json({ message: "Update failed" });
+        console.log("UPDATE ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Update failed"
+        });
     }
 };
