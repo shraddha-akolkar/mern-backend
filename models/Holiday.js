@@ -21,9 +21,7 @@ const Holiday = sequelize.define("Holiday", {
         type: DataTypes.STRING
     },
 
-    description: {
-        type: DataTypes.STRING
-    }
+
 
 }, {
     timestamps: true

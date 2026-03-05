@@ -2,10 +2,7 @@ const Holiday = require("../models/Holiday");
 const { Op } = require("sequelize");
 
 
-/*
-GET HOLIDAYS
-Filter by month or search
-*/
+/*Filter by month or search*/
 exports.getHolidays = async (req, res) => {
     try {
 
@@ -13,14 +10,14 @@ exports.getHolidays = async (req, res) => {
 
         let where = {};
 
-        // SEARCH BY NAME
+        //  NAME
         if (search) {
             where.title = {
                 [Op.like]: `%${search}%`
             };
         }
 
-        // FILTER BY MONTH
+        //  MONTH
         if (month && month !== "All") {
 
             const start = new Date(`2026-${month}-01`);
@@ -45,67 +42,85 @@ exports.getHolidays = async (req, res) => {
 
 
 
-/*
-CREATE HOLIDAY
-*/
+/*CREATE */
 exports.createHoliday = async (req, res) => {
     try {
 
         const { title, date, day, description } = req.body;
+
+        const image = req.file ? req.file.filename : null;
 
         const holiday = await Holiday.create({
             title,
             date,
             day,
             description,
-            image: req.file ? req.file.filename : null
-        });
+            image
 
-        res.json({
+        });
+        console.log(req.body);
+        console.log(req.file);
+        return res.status(201).json({
             message: "Holiday created successfully",
             holiday
         });
 
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Create failed" });
+        console.log("Create Holiday Error:", error);
+        return res.status(500).json({ message: "Create failed" });
     }
+
 };
 
 
-
-/*
-DELETE HOLIDAY
-*/
+/*DELETE */
 exports.deleteHoliday = async (req, res) => {
     try {
 
-        await Holiday.destroy({
-            where: { id: req.params.id }
-        });
+        const id = req.params.id;
+
+        const holiday = await Holiday.findByPk(id);
+
+        if (!holiday) {
+            return res.status(404).json({ message: "Holiday not found" });
+        }
+
+        await holiday.destroy();
 
         res.json({ message: "Holiday deleted successfully" });
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Delete failed" });
     }
 };
 
 
 
-/*
-UPDATE HOLIDAY
-*/
+/*UPDATE*/
 exports.updateHoliday = async (req, res) => {
     try {
 
-        await Holiday.update(req.body, {
+        const { title, date, day } = req.body;
+
+        let updateData = {
+            title,
+            date,
+            day
+        };
+
+        if (req.file) {
+            updateData.image = req.file.filename;
+        }
+
+        await Holiday.update(updateData, {
             where: { id: req.params.id }
         });
 
         res.json({ message: "Holiday updated successfully" });
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Update failed" });
     }
 };
