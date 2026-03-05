@@ -13,12 +13,14 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/employees", require("./routes/employeeRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/holidays", require("./routes/holidayRoutes"));
-
+const meetingRoutes = require("./routes/meetingRoutes");
+app.use("/api/meetings", meetingRoutes);
 
 require("./models/Holiday")
 require("./models/Admin");
 require("./models/Employee");
-require("./models/Attendance")
+require("./models/Attendance"),
+  require("./models/Meeting");
 
 
 sequelize.sync()
