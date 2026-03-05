@@ -1,28 +1,9 @@
 const Meeting = require("../models/Meeting");
 
-/* CREATE MEETING */
+/* CREATE */
 exports.createMeeting = async (req, res) => {
     try {
-
-        const {
-            clientName,
-            employee,
-            clientAddress,
-            dayType,
-            shiftType,
-            date,
-            service
-        } = req.body;
-
-        const meeting = await Meeting.create({
-            clientName,
-            employee,
-            clientAddress,
-            dayType,
-            shiftType,
-            date,
-            service
-        });
+        const meeting = await Meeting.create(req.body);
 
         res.status(201).json({
             message: "Meeting created successfully",
@@ -31,12 +12,12 @@ exports.createMeeting = async (req, res) => {
 
     } catch (error) {
         console.log(error);
-        res.status(500).json({ message: "Meeting creation failed" });
+        res.status(500).json({ message: "Create failed" });
     }
 };
 
 
-/* GET MEETINGS */
+/* GET ALL */
 exports.getMeetings = async (req, res) => {
     try {
 
@@ -48,5 +29,45 @@ exports.getMeetings = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: "Fetch failed" });
+    }
+};
+
+
+/* DELETE */
+exports.deleteMeeting = async (req, res) => {
+    try {
+
+        const id = req.params.id;
+
+        const meeting = await Meeting.findByPk(id);
+
+        if (!meeting) {
+            return res.status(404).json({ message: "Meeting not found" });
+        }
+
+        await meeting.destroy();
+
+        res.json({ message: "Meeting deleted successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message: "Delete failed" });
+    }
+};
+
+
+/* UPDATE */
+exports.updateMeeting = async (req, res) => {
+    try {
+
+        const id = req.params.id;
+
+        await Meeting.update(req.body, {
+            where: { id }
+        });
+
+        res.json({ message: "Meeting updated successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message: "Update failed" });
     }
 };
