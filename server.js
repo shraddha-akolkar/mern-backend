@@ -12,8 +12,10 @@ app.use("/uploads", express.static("uploads"));
 
 app.use("/api/employees", require("./routes/employeeRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/holidays", require("./routes/holidayRoutes"));
 
 
+require("./models/Holiday")
 require("./models/Admin");
 require("./models/Employee");
 require("./models/Attendance")
