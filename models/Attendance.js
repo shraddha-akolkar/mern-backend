@@ -1,7 +1,8 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const Employee = require('./Employee');
-const Attendance = sequelize.define('Attendance', {
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db");
+const Employee = require("./Employee");
+
+const Attendance = sequelize.define("Attendance", {
     date: {
         type: DataTypes.DATEONLY,
         allowNull: false
@@ -12,28 +13,21 @@ const Attendance = sequelize.define('Attendance', {
     },
     outTime: {
         type: DataTypes.TIME,
-        allowNull: false
+        allowNull: true
     },
     duration: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+        type: DataTypes.INTEGER, // minutes
+        allowNull: true
     },
     overtime: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+        type: DataTypes.INTEGER, // minutes
+        allowNull: true
     }
 }, {
     timestamps: true
 });
 
-
-Employee.hasMany(Attendance, { foreignKey: 'employeeId', });
-Attendance.belongsTo(Employee, { foreignKey: 'employeeId' });
-
-
-
-
-
-
+Employee.hasMany(Attendance, { foreignKey: "employeeId" });
+Attendance.belongsTo(Employee, { foreignKey: "employeeId" });
 
 module.exports = Attendance;

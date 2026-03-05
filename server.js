@@ -15,7 +15,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/holidays", require("./routes/holidayRoutes"));
 const meetingRoutes = require("./routes/meetingRoutes");
 app.use("/api/meetings", meetingRoutes);
-
+app.use("/api/attendance", require("./routes/attendanceRoutes"));
 require("./models/Holiday")
 require("./models/Admin");
 require("./models/Employee");

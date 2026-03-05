@@ -1,7 +1,7 @@
 const Employee = require("../models/Employee");
 const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs");
-
+const jwt = require("jsonwebtoken");
 /*  REGISTER  */
 
 exports.register = async (req, res) => {
@@ -60,8 +60,8 @@ exports.register = async (req, res) => {
       visaStatus,
       visaExpiringOn,
       password: hashedPassword,
-      idProof: idProofFile,               
-      employeePicture: employeePictureFile 
+      idProof: idProofFile,
+      employeePicture: employeePictureFile
     });
 
     res.status(201).json({
@@ -126,8 +126,15 @@ exports.login = async (req, res) => {
         });
       }
 
+      const token = jwt.sign(
+        { id: admin.id, role: "admin" },
+        "secretkey",
+        { expiresIn: "1d" }
+      );
+
       return res.json({
         success: true,
+        token,
         role: "admin",
         data: {
           id: admin.id,
@@ -157,8 +164,15 @@ exports.login = async (req, res) => {
         });
       }
 
+      const token = jwt.sign(
+        { id: employee.id, role: "employee" },
+        "secretkey",
+        { expiresIn: "1d" }
+      );
+
       return res.json({
         success: true,
+        token,
         role: "employee",
         data: {
           id: employee.id,
