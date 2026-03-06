@@ -122,3 +122,79 @@ exports.getEmployeeAttendance = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+
+// DELETE 
+exports.deleteAttendance = async (req, res) => {
+    try {
+
+        const { id } = req.params;
+
+        const attendance = await Attendance.findByPk(id);
+
+        if (!attendance) {
+            return res.status(404).json({ message: "Attendance not found" });
+        }
+
+        await attendance.destroy();
+
+        res.json({ message: "Attendance deleted successfully" });
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// UPDATE
+exports.updateAttendance = async (req, res) => {
+    try {
+
+        const { id } = req.params;
+
+        const { inTime, outTime } = req.body;
+
+        const attendance = await Attendance.findByPk(id);
+
+        if (!attendance) {
+            return res.status(404).json({ message: "Attendance not found" });
+        }
+
+        let duration = null;
+        let overtime = null;
+
+        if (inTime && outTime) {
+
+            const today = attendance.date;
+
+            const start = new Date(`${today}T${inTime}`);
+            const end = new Date(`${today}T${outTime}`);
+
+            const diffMinutes = Math.floor((end - start) / 60000);
+
+            duration = diffMinutes;
+
+            if (diffMinutes > 480) {
+                overtime = diffMinutes - 480;
+            } else {
+                overtime = 0;
+            }
+
+        }
+
+        await attendance.update({
+            inTime,
+            outTime,
+            duration,
+            overtime
+        });
+
+        res.json({
+            message: "Attendance updated successfully",
+            attendance
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
