@@ -11,7 +11,6 @@ exports.scanAttendance = async (req, res) => {
 
         const today = new Date().toISOString().split("T")[0];
         const now = new Date();
-
         const time = now.toTimeString().split(" ")[0];
 
         let attendance = await Attendance.findOne({
@@ -35,11 +34,10 @@ exports.scanAttendance = async (req, res) => {
                 type: "IN",
                 attendance
             });
-
         }
 
         // SCAN OUT
-        if (!attendance.outTime) {
+        if (!attendance.outTime || attendance.outTime === "00:00:00") {
 
             const inTime = new Date(`${today}T${attendance.inTime}`);
             const outTime = new Date();
@@ -48,8 +46,8 @@ exports.scanAttendance = async (req, res) => {
 
             let overtime = 0;
 
-            if (diffMinutes > 480) { // 8 hours
-                overtime = diffMinutes - 480;
+            if (diffMinutes > 1) {
+                overtime = diffMinutes - 1;
             }
 
             attendance.outTime = time;
@@ -83,6 +81,32 @@ exports.getAttendance = async (req, res) => {
     try {
 
         const data = await Attendance.findAll({
+            include: [
+                {
+                    model: Employee,
+                    attributes: ["id", "name", "designation", "type"]
+                }
+            ],
+            order: [["date", "DESC"]]
+        });
+
+        res.json(data);
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+// GET EMPLOYEE ATTENDANCE
+
+exports.getEmployeeAttendance = async (req, res) => {
+    try {
+
+        const { employeeId } = req.params;
+
+        const data = await Attendance.findAll({
+            where: { employeeId },
             include: [
                 {
                     model: Employee,
