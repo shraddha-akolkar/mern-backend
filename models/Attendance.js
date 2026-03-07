@@ -22,7 +22,8 @@ const Attendance = sequelize.define("Attendance", {
     overtime: {
         type: DataTypes.INTEGER, // minutes
         allowNull: true
-    }
+    },
+
 }, {
     timestamps: true
 });

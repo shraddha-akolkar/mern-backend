@@ -7,71 +7,52 @@ const { Op } = require("sequelize");
 exports.scanAttendance = async (req, res) => {
     try {
 
-        const { employeeId } = req.body;
+        const { employeeId, inTime, outTime } = req.body;
+
+        if (!employeeId || !inTime || !outTime) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
 
         const today = new Date().toISOString().split("T")[0];
-        const now = new Date();
-        const time = now.toTimeString().split(" ")[0];
 
-        let attendance = await Attendance.findOne({
-            where: {
-                employeeId,
-                date: today
-            }
+        const start = new Date(`${today}T${inTime}`);
+        const end = new Date(`${today}T${outTime}`);
+
+        const diffMinutes = Math.floor((end - start) / 60000);
+
+        if (diffMinutes < 0) {
+            return res.status(400).json({
+                message: "Out time must be after In time"
+            });
+        }
+
+        const REQUIRED_WORK_MINUTES = 360; // 6 hours
+
+        let overtime = 0;
+
+        if (diffMinutes > REQUIRED_WORK_MINUTES) {
+            overtime = diffMinutes - REQUIRED_WORK_MINUTES;
+        }
+
+        const attendance = await Attendance.create({
+            employeeId,
+            date: today,
+            inTime,
+            outTime,
+            duration: diffMinutes,
+            overtime
         });
 
-        // SCAN IN
-        if (!attendance) {
-
-            attendance = await Attendance.create({
-                employeeId,
-                date: today,
-                inTime: time
-            });
-
-            return res.json({
-                message: "Scan In Successful",
-                type: "IN",
-                attendance
-            });
-        }
-
-        // SCAN OUT
-        if (!attendance.outTime || attendance.outTime === "00:00:00") {
-
-            const inTime = new Date(`${today}T${attendance.inTime}`);
-            const outTime = new Date();
-
-            const diffMinutes = Math.floor((outTime - inTime) / 60000);
-
-            let overtime = 0;
-
-            if (diffMinutes > 1) {
-                overtime = diffMinutes - 1;
-            }
-
-            attendance.outTime = time;
-            attendance.duration = diffMinutes;
-            attendance.overtime = overtime;
-
-            await attendance.save();
-
-            return res.json({
-                message: "Scan Out Successful",
-                type: "OUT",
-                attendance
-            });
-        }
-
-        return res.json({
-            message: "Already scanned out today"
+        res.json({
+            message: "Attendance Added Successfully",
+            attendance
         });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 };
-
 
 
 
@@ -84,7 +65,7 @@ exports.getAttendance = async (req, res) => {
             include: [
                 {
                     model: Employee,
-                    attributes: ["id", "name", "designation", "type"]
+                    attributes: ["id", "name", "designation", "type", "employeePicture"]
                 }
             ],
             order: [["date", "DESC"]]
@@ -127,7 +108,6 @@ exports.getEmployeeAttendance = async (req, res) => {
 // DELETE 
 exports.deleteAttendance = async (req, res) => {
     try {
-
         const { id } = req.params;
 
         const attendance = await Attendance.findByPk(id);
@@ -145,13 +125,11 @@ exports.deleteAttendance = async (req, res) => {
     }
 };
 
-
 // UPDATE
 exports.updateAttendance = async (req, res) => {
     try {
 
         const { id } = req.params;
-
         const { inTime, outTime } = req.body;
 
         const attendance = await Attendance.findByPk(id);
@@ -160,32 +138,31 @@ exports.updateAttendance = async (req, res) => {
             return res.status(404).json({ message: "Attendance not found" });
         }
 
-        let duration = null;
-        let overtime = null;
+        const date = attendance.date;
 
-        if (inTime && outTime) {
+        const start = new Date(`${date}T${inTime}`);
+        const end = new Date(`${date}T${outTime}`);
 
-            const today = attendance.date;
+        const diffMinutes = Math.floor((end - start) / 60000);
 
-            const start = new Date(`${today}T${inTime}`);
-            const end = new Date(`${today}T${outTime}`);
+        if (diffMinutes < 0) {
+            return res.status(400).json({
+                message: "Out time must be after In time"
+            });
+        }
 
-            const diffMinutes = Math.floor((end - start) / 60000);
+        const REQUIRED_WORK_MINUTES = 360;
 
-            duration = diffMinutes;
+        let overtime = 0;
 
-            if (diffMinutes > 480) {
-                overtime = diffMinutes - 480;
-            } else {
-                overtime = 0;
-            }
-
+        if (diffMinutes > REQUIRED_WORK_MINUTES) {
+            overtime = diffMinutes - REQUIRED_WORK_MINUTES;
         }
 
         await attendance.update({
             inTime,
             outTime,
-            duration,
+            duration: diffMinutes,
             overtime
         });
 
