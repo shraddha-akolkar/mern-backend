@@ -7,45 +7,67 @@ const { Op } = require("sequelize");
 exports.scanAttendance = async (req, res) => {
     try {
 
-        const { employeeId, inTime, outTime } = req.body;
+        const { employeeId } = req.body;
 
-        if (!employeeId || !inTime || !outTime) {
-            return res.status(400).json({ message: "Missing required fields" });
+        if (!employeeId) {
+            return res.status(400).json({ message: "Employee ID required" });
         }
 
         const today = new Date().toISOString().split("T")[0];
+        const now = new Date();
 
-        const start = new Date(`${today}T${inTime}`);
-        const end = new Date(`${today}T${outTime}`);
+        const currentTime = now.toTimeString().split(" ")[0];
 
-        const diffMinutes = Math.floor((end - start) / 60000);
+        // check if already scanned today
+        let attendance = await Attendance.findOne({
+            where: { employeeId, date: today }
+        });
 
-        if (diffMinutes < 0) {
-            return res.status(400).json({
-                message: "Out time must be after In time"
+        // SCAN IN
+        if (!attendance) {
+
+            attendance = await Attendance.create({
+                employeeId,
+                date: today,
+                inTime: currentTime
+            });
+
+            return res.json({
+                message: "Scan In successful",
+                attendance
             });
         }
 
-        const REQUIRED_WORK_MINUTES = 360; // 6 hours
+        // SCAN OUT
+        if (!attendance.outTime || attendance.outTime === "00:00:00") {
 
-        let overtime = 0;
+            const start = new Date(`${today}T${attendance.inTime}`);
+            const end = new Date(`${today}T${currentTime}`);
 
-        if (diffMinutes > REQUIRED_WORK_MINUTES) {
-            overtime = diffMinutes - REQUIRED_WORK_MINUTES;
+            const diffMinutes = Math.floor((end - start) / 60000);
+
+            const REQUIRED_WORK = 360;
+
+            let overtime = 0;
+
+            if (diffMinutes > REQUIRED_WORK) {
+                overtime = diffMinutes - REQUIRED_WORK;
+            }
+
+            await attendance.update({
+                outTime: currentTime,
+                duration: diffMinutes,
+                overtime
+            });
+
+            return res.json({
+                message: "Scan Out successful",
+                attendance
+            });
         }
 
-        const attendance = await Attendance.create({
-            employeeId,
-            date: today,
-            inTime,
-            outTime,
-            duration: diffMinutes,
-            overtime
-        });
-
-        res.json({
-            message: "Attendance Added Successfully",
-            attendance
+        return res.json({
+            message: "Attendance already completed for today"
         });
 
     } catch (error) {
