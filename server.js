@@ -13,20 +13,22 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/employees", require("./routes/employeeRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/holidays", require("./routes/holidayRoutes"));
-const meetingRoutes = require("./routes/meetingRoutes");
-app.use("/api/meetings", meetingRoutes);
+app.use("/api/meetings", require("./routes/meetingRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
-require("./models/Holiday")
+app.use("/api/leave", require("./routes/leaveRoutes"));
+
+
+
+require("./models/Holiday");
 require("./models/Admin");
 require("./models/Employee");
-require("./models/Attendance"),
-  require("./models/Meeting");
-
+require("./models/Attendance");
+require("./models/Meeting");
+require("./models/Leave");
 
 sequelize.sync()
   .then(() => console.log("Database Synced"))
   .catch(err => console.log(err));
-
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
