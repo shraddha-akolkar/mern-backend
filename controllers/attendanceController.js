@@ -113,7 +113,7 @@ exports.getEmployeeAttendance = async (req, res) => {
             include: [
                 {
                     model: Employee,
-                    attributes: ["id", "name", "designation", "type"]
+                    attributes: ["id", "name", "designation", "type", "employeePicture"]
                 }
             ],
             order: [["date", "DESC"]]
