@@ -29,6 +29,7 @@ exports.getHolidays = async (req, res) => {
         }
 
         const holidays = await Holiday.findAll({
+            where,
             order: [["date", "ASC"]]
         });
 
@@ -124,3 +125,7 @@ exports.updateHoliday = async (req, res) => {
         res.status(500).json({ message: "Update failed" });
     }
 };
+
+
+
+/*FILTER*/

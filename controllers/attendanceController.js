@@ -18,7 +18,7 @@ exports.scanAttendance = async (req, res) => {
 
         const currentTime = now.toTimeString().split(" ")[0];
 
-        // check if already scanned today
+        // check scanned today
         let attendance = await Attendance.findOne({
             where: { employeeId, date: today }
         });
@@ -78,7 +78,7 @@ exports.scanAttendance = async (req, res) => {
 
 
 
-// GET ATTENDANCE WITH EMPLOYEE DATA
+// GET ATTENDANCE
 
 exports.getAttendance = async (req, res) => {
     try {

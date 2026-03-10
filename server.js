@@ -16,8 +16,7 @@ app.use("/api/holidays", require("./routes/holidayRoutes"));
 app.use("/api/meetings", require("./routes/meetingRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/leave", require("./routes/leaveRoutes"));
-
-
+app.use("/api/admin-attendance", require("./routes/adminAttendanceRoutes"));
 
 require("./models/Holiday");
 require("./models/Admin");
@@ -25,6 +24,7 @@ require("./models/Employee");
 require("./models/Attendance");
 require("./models/Meeting");
 require("./models/Leave");
+require("./models/AdminAttendance");
 
 sequelize.sync()
   .then(() => console.log("Database Synced"))
